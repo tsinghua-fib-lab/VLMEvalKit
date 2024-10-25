@@ -30,6 +30,7 @@ class VILA(BaseModel):
             sys.exit(-1)
 
         warnings.warn('Please install the latest version of VILA from GitHub before you evaluate the VILA model.')
+        # print(model_path)
         assert osp.exists(model_path) or len(model_path.split('/')) == 2
 
         model_name = get_model_name_from_path(model_path)
@@ -96,6 +97,19 @@ class VILA(BaseModel):
         conv.append_message(conv.roles[0], content)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
+
+        # Notice: The following code intends to fix the bug by unmatching num of <image> and images. Before use, please inspect if the behavior is as expected.
+        # 1. Count the number of <image> in prompt:str
+        # 2. Compare that number to the number of images
+        # 3 if number of <image> is larger than actual image numbers, replace the first few <image>\n until they are equal
+        image_token_count = prompt.count(self.DEFAULT_IMAGE_TOKEN)
+        actual_image_count = len(images)
+        if image_token_count > actual_image_count:
+                excess_images = image_token_count - actual_image_count
+                for _ in range(excess_images):
+                    prompt = prompt.replace(self.DEFAULT_IMAGE_TOKEN + '\n', '', 1)
+
+        ###############################################################################################
 
         input_ids = self.tokenizer_image_token(prompt, self.tokenizer, self.IMAGE_TOKEN_INDEX,
                                                return_tensors='pt').unsqueeze(0).cuda()
