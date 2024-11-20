@@ -88,9 +88,12 @@ class VILA(BaseModel):
                 images.append(image)
                 content += (self.DEFAULT_IMAGE_TOKEN + '\n')
 
-        image_tensor = self.process_images(
-            images, self.image_processor,
-            self.model.config).to(self.model.device, dtype=torch.float16)
+        if images == []:
+            image_tensor = None
+        else:
+            image_tensor = self.process_images(
+                images, self.image_processor,
+                self.model.config).to(self.model.device, dtype=torch.float16)
 
         # Support interleave text and image
         conv = self.conv_templates[self.conv_mode].copy()
